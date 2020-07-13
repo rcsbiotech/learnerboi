@@ -710,6 +710,27 @@ y == 8
 x / y
 ```
 
+There are also matrix operations, such as element-wise multiplication:
+
+```{r}
+x = matrix(1:4, 2, 2)
+y = matrix(rep(10, 4), 2, 2)
+x * y
+```
+
+Element-wise division:
+
+```{r}
+x / y
+```
+
+True matrix multiplication:
+
+```{r}
+x %*% y
+```
+
+
 # Quiz and Swirl exercises
 
 
