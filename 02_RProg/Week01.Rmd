@@ -1,0 +1,302 @@
+---
+title: 'Week01: Overview'
+output:
+  html_document: 
+    toc: yes
+  pdf_document: default
+  word_document: default
+---
+
+## Preamble
+
+### Firing up python for Rmd
+
+```{r}
+library(reticulate)
+use_python("C:/Users/PICHAU/anaconda3/python.exe")
+```
+
+### Additional packages and notes
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+## History of R
+
+- First written in Fortran, then in C
+- Environment for basic analysis, and then programming
+
+## Features i didn't know of
+
+- Identical to S
+- Run on anything (even Playstation 3)
+- Constant releases
+- User turns into a programmer
+
+## Free software?
+
+1. Run the program
+2. Study the program and source code
+3. Freedom to redistribute
+4. Freedom to improve the program
+
+## Drawbacks
+
+1. 40-year old technology
+2. 3D/dynamic graphics sucks
+3. Functionality is based on demand
+4. Objects are (usually) stored in physical memory
+5. Slow if you don't know C++can 
+
+## Asking questions
+
+Pretty basic, i'm a master forumer already.
+
+## Code: Input and Evaluation
+
+```{r}
+## Assignment operators
+x = 1
+y <- 2
+print(x)
+print(y)
+
+## Incomplete expression
+# ex:
+# x <-
+```
+
+Evaluation: whenever some object is called, it is auto-printed:
+
+```{r}
+print(x)
+```
+
+Let's try a sequence:
+
+```{r}
+seq = 1:20
+print(seq)
+```
+
+
+## R Objects and Attributes
+
+- Everything is an object
+- Atomic types:
+  - Char
+  - Num
+  - Int
+  - Complex
+  - Logicals
+- The most basic object is a vector
+- Lists are represented as vector, but may contain anything inside
+
+### Numbers
+
+- Num objects
+- An integer must be specified with L, such as: `1L`
+- Other numbers:
+  - `Inf` is infinity
+  - `NaN` is "not a number", or missing value
+  
+### Attributes
+
+R objects can have attributes:
+
+- names, dimnames
+- dimensions
+- class
+- length
+- anything user-defined
+- check with `attributes()`
+
+### Data types: vectors and functions
+
+#### c() - concatenates values
+
+Creates vectors with the desired content
+
+```{r}
+x = c(0.5, 0.6)
+x = c(2L, 4L)
+x = 9:29
+x = c(1+0i, 2+4i)
+```
+
+#### vector() - creates vectors
+
+```{r}
+x = vector("numeric", length = 15)
+print(x)
+```
+
+#### Mixing objects and coercion
+
+when mixing objects in a vector, the least enforced type is coerced, from boolean, to integer, to character
+
+#### Explicit coercion: as.type()
+
+We can force a class to be whatever type we want explicitly:
+
+```{r}
+x = 0:5
+as.numeric(x)
+as.logical(x)
+as.character(x)
+as.complex(x)
+```
+
+Nonsensical coercion results in NAs:
+
+```{r}
+x = c("a","b","c")
+as.numeric(x)
+as.logical(x)
+as.complex(x)
+```
+
+### Lists
+
+Super vectors that can carry anything as an indexed element
+
+```{r}
+x = list(1, "a", T, 1+4i)
+print(x)
+```
+
+### Matrices
+
+Vectors with a dimension attribute, an integer
+
+```{r}
+m = matrix(nrow = 2, ncol = 3)
+m
+```
+```{r}
+dim(m)
+```
+```{r}
+attributes(m)
+```
+
+Constructing a matrix column-wise:
+
+```{r}
+m2 = matrix(1:6,
+            nrow = 2,
+            ncol = 3)
+
+print(m2)
+```
+
+Can be creating by dimensions after a vector:
+
+```{r}
+m = 1:10
+dim(m) = c(2,5)
+print(m)
+```
+
+Matrices can also be created by binding stuff:
+
+```{r}
+x = 1:3
+y = 10:12
+cbind(x, y)
+```
+```{r}
+rbind(x,y)
+```
+
+### Data types - Factors
+
+Special type of vector to represent categorical data, examples:
+
+- Male and female
+- Treatment and control
+
+They are used by special functions such as `lm()`, `DESeq()`, and `glm()`. Their use is encouraged since factors are self-describing.
+
+#### factor() - creating factors
+
+Factors are created as such:
+
+```{r}
+x = factor(c("yes", "yes", "no", "yes", "no"))
+print(x)
+```
+Can be shown as tables:
+```{r}
+table(x)
+```
+Classes can be stripped from vectors:
+```{r}
+unclass(x)
+```
+
+#### levels() - ordering factors
+
+Factors can be ordered, which is important for linear modelling, especially determining the baseline. Let's set up yes for the baseline:
+
+```{r}
+x = factor(c("yes", "yes", "no", "yes", "no"),
+           levels = c("yes", "no"))
+print(x)
+```
+
+### Missing values
+
+Missing valures are either `NA` or `NaN` for math. Some functions might help with checking, such as:
+
+- `is.na()` tests for NAs
+- `is.nan()` check for NaNs
+- `NA` values also have classes (int, char, etc)
+- `NaN` is also `NA` but not the converse
+
+#### is.na() - tests for missing values
+
+```{r}
+x = c(1, 2, NA, 10, 3)
+is.na(x)
+```
+
+```{r}
+is.nan(x)
+```
+And again, with `NaN`:
+```{r}
+x = c(1, 2, NaN, NA, 4)
+is.na(x)
+```
+```{r}
+is.nan(x)
+```
+
+### Data types - data.frames
+
+Store tabular data, but with many more functionalities than a simple matrix despite being always rectangular
+
+- Special type of list (every element has the same length)
+- Each element is a column, with a row as length
+- Can store almost anything
+- Data frames have `row.names()` and `colNames()`
+- Most common form of importing data
+- Can be coerced to a matrix using `data.matrix()`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
