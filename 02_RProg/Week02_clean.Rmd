@@ -1,0 +1,96 @@
+---
+title: "Week 2 - Control Structures"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::html_clean:
+    highlight: kate
+---
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+Control structures!
+Some testing with unusual forms:
+
+### "If/else"
+
+```{r}
+## Some wild forms!
+x <- 2
+y <- if (x > 3) {10} else {0}
+```
+
+### "For" loops
+
+```{r}
+## Crunched version
+for (i in 1:10) {print(i)}
+
+## More spaced out
+for (n in 1:15) {
+  print(n)
+}
+
+```
+
+C-like form:
+
+```{r}
+x <- c("a", "b", "c", "d")
+
+for(i in 1:4) {print(x[i])}
+```
+
+```{r}
+# With seq_along
+for (i in seq_along(x)) { print(x[i]) }
+```
+
+Compact-style:
+
+```{r}
+for (letter in x) { print(letter) }
+```
+
+### Nested for loops
+
+Bit of a pain to read, try to get around
+
+```{r}
+x <- matrix(1:6, 2, 3)
+
+for (i in seq_len(nrow(x))) {
+  for(j in seq_len(ncol(x))) {
+    print(x[i, j])
+  }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
