@@ -80,17 +80,363 @@ for (i in seq_len(nrow(x))) {
 }
 ```
 
+### While loops
+
+Runs a condition while something is true, when false it breaks
+
+- Stop condition (or infinites)
+
+```{r}
+count <- 0
+
+while (count < 10) {
+  print(count)
+  count = count +1
+}
+```
+
+Testing multiple conditions:
+
+```{r}
+z = 5
+
+# Coin flip tests
+while ( z >= 3 && z <= 10) {
+  print(z)
+  coin <- rbinom(1, 1, 0.5)
+  
+  if ( coin == 1 ) { z = z + 1 } 
+  else { z = z - 1 }
+    
+}
+
+```
+
+### Repeat, next, break
+
+- Infinite loop
+- Not common in statistics but have uses
+- Vectorizing is always usually better
+
+BTW very badly written part, code doesn't work!
+
+```{r eval=FALSE}
+x0 = 1
+tol = 1e-8
+
+repeat {
+  x1 <- computeEstimate()
+  
+  if (abs(x1-x0) < tol) {
+    break
+  } else {
+    x0 = x1
+  }
+}
+
+```
+
+### Next & Return
+
+- Next skips an interation
+- Return signals an ending
+
+```{r}
+for (i in 1:100) {
+  if (i <= 96) {
+    next
+  }
+  print("blah")
+}
+```
+
+## First function
+
+- Suggestion: separate file
+
+Sum two files:
+
+```{r}
+add2 <- function(x, y) {x + y}
+```
 
 
+### Function: Above10
+
+- Returns numbers above 10
+
+```{r}
+above10 <- function(x) {
+  use <- x > 10
+  x[use]
+}
+```
+
+### AboveN: Returns numbers above a given number
+
+```{r}
+aboveN <- function(x, n) {
+  use <- x > n
+  x[use]
+}
+```
 
 
+### AboveN with a default argument
 
+```{r}
+aboveN <- function(x, n = 10) {
+  use <- x > n
+  x[use]
+}
+```
 
+### ColMean
 
+- removeNA doesn't work in this case
 
+```{r}
+colmean <- function(y, removeNA = T) {
+  nc = ncol(y)
+  means = numeric(nc)
+  for (i in 1:nc) {
+    means[i] <- mean(y[, i])
+  }
+  means
+}
+```
 
+## Functions part I actualy II
 
+- How functions speed things up
+- Functions are first class object (aka can be used like anything else)
+- Functions have named arguments, aka x in `function(x)`
+- `formals()` returns all arguments of a function
+- Arguments can be matched positionally or by name and can be also mixed (which is kinda useless and messy and i dont believe i've ever used it, or will)
+- Functions can be partially matched!
 
+## Functions part II actually III
+
+- Default argument value can be `NULL`
+- Functions have lazy evaluation: are only evaluated as they are needed as long as you pass NULL
+
+```{r}
+lazysqr = function(a = NULL, b = NULL) {
+  a^2
+  b^2
+}
+```
+
+A printing funcion:
+
+```{r}
+printer = function(a, b = NULL) {
+  print(a)
+  print(b)
+}
+```
+
+## The "..." Argument
+
+- `...` indicates a variable number of args that are passed to other functions
+- They extend another function in a situation in which you dont want to copy the entire argument list of the original function
+- `...` can be also used when the number of arguments cannot be known in advance (thii about `paste()`, for instance)
+- Any arguments after `...` must be named explicitly, and cannot be partially matched which is logical
+
+Example: plots with lines (type instead of dot):
+
+```{r}
+myplot = function(x, y, type = "l", ...) {
+  plot(x, y, type = type, ...)
+}
+```
+
+## Symbol binding
+
+- Named scopes and precedence
+- Attribution happens by searching environments for appropriate values, in the order:
+
+1. Anything entered by user (which enters the global envo, but takes precedence)
+2. Search the global environment
+3. Search the namespaces of the packages on the search list `search()`
+
+- One can define which packages are loaded, in what order
+- A package loaded with `library()` takes precedence over global.envo
+- Namespaces are different for functions and non-functions
+- R uses lexical/statical scoping, supposedly useful for statistics
+- The scoping rules of a language determine how values are assigned to free valuables. In R, the values of free valuables are searched for in the environment that defines the function.
+- A function (L1) inside a function (L2) has the environment of L1!
+
+```{r}
+## Function returns another function as output!
+make.power <- function(n) {
+  pow <- function(x) {
+    x^n
+  }
+  pow
+}
+
+cube <- make.power(3)
+sqrd <- make.power(2)
+```
+
+### Exploring a function closure
+
+What's in a function environment?
+
+```{r}
+## Finds what's an environment
+ls(environment(cube))
+```
+
+```{r}
+## Gets detailed values
+get("n", environment(cube))
+```
+
+### Lexical vs dynamic scoping
+
+They are the same if you define everything on the global envo
+
+```{r}
+g = function(x) {
+  a = 3
+  x + a + y
+}
+
+g(2)
+```
+
+## Optimization
+
+Bit of critique here: the content doesn't match the level of classes at all. Bit of a mismatch here.
+
+- optim. routines requires as an arg a function whose argument is a vector of parameters
+- An object function, however, might depend on other things besides its own parameters (such as stuff from the environment)
+- When writing optimization software, sometimes its good to let the user fix certain parameters
+
+## Dates and times
+
+### Dates
+
+```{r}
+x = as.Date("1970-01-01")
+x
+```
+
+```{r}
+unclass(x)
+```
+```{r}
+unclass(as.Date("1970-02-01"))
+```
+
+### Times
+
+- POSIXct - very large integer
+- POSIXlt - list that store a bunch of information
+
+POSIXct is a pure integer. POSIXlt is readable:
+
+```{r}
+x = Sys.time()
+p = as.POSIXlt(x)
+names(unclass(p))
+```
+
+### strptime function captures a date in a different format
+
+Code didnt work
+
+```{r}
+datestring = c("January 10, 2012 10:40", "December 9, 2011 9:10")
+x = strptime(datestring, "%B %d, %Y %H:%M")
+x
+class(x)
+```
+
+### Operation on dates and times
+
+Can add or subtract dates:
+
+```{r}
+x = as.Date("2012-01-01")
+y = strptime("9 Jan 2011 11:34:21", "%d %b %Y %H:%M:%S")
+x = as.POSIXlt(x)
+x-y
+```
+
+Also difference in time zones!
+
+```{r}
+x = as.POSIXct("2012-10-25 01:00:00")
+y = as.POSIXct("2012-10-25 06:00:00", tz = "GMT")
+y-x
+```
+
+# Week 2 Quiz
+
+1. 
+
+```{r}
+cube <- function(x, n) {
+        x^3
+}
+
+cube(3)
+```
+
+2. The following code will produce a warning in R. (It did not!)
+
+```{r}
+x <- 1:10
+if(x > 5) {x <- 0}
+```
+
+3. Consider the following function
+
+```{r}
+f <- function(x) {
+        g <- function(y) {y + z}
+        z <- 4
+        x + g(x)
+}
+
+z = -15
+f(3)
+```
+
+Consider the following expression. What is the value of 'y' after evaluating 
+this expression?
+
+```{r}
+
+x <- 5
+y <- if(x < 3) {NA} else {10}
+```
+
+# Programming assignment
+
+- Passing working directory
+
+```{r}
+specdata <- "./02_RProg/Week02_data/specdata/"
+pollutantmean(specdata, "sulfate", 1:10)
+
+cr <- corr(specdata, 129)                
+cr <- sort(cr)                
+n <- length(cr)    
+RNGversion("3.5.1")
+set.seed(197)                
+out <- c(n, round(cr[sample(n, 5)], 4))
+print(out)
+
+cr <- corr(specdata, 2000)                
+n <- length(cr)                
+cr <- corr(specdata, 1000)                
+cr <- sort(cr)
+print(c(n, round(cr, 4)))
+```
 
 
 
