@@ -25,5 +25,487 @@ opts_knit$set(width=75)
 
 # Week 3 - Loop functions and Debugging
 
+Main themes:
+- Loop functions, apply family: `lapply`, `tapply`, etc.
+- The R Debugger
+
+Goals:
+- Define anonymous functions and use them in loop functions;
+- How to start and run the R debugger
+- Use `traceback()` the function call stack
+
+## Compact "apply" loops
+
+- lapply: loop over a list and eval a func on each element
+- sapply: same as lapply, but simplifies the out
+- apply: apply a function over the margins of an array
+- tapply: apply over subsets of a vector
+- mapply: multivariate version of lapply
+- split: useful with lapply
+
+### lapply()
+
+Args:
+
+1. A list, or coercible object
+2. A function
+3. `...` other args
+
+Ex:
+
+```{r}
+x <- list(a = 1:5, b = rnorm(10))
+lapply(x, mean)
+```
+
+With four values:
+
+```{r}
+x = list(
+  a = 1:4,
+  b = rnorm(10),
+  c = rnorm(20, 1),
+  d = rnorm(100, 5)
+)
+
+lapply(x, mean)
+```
+
+- Names are preserved
+- With runinf (1 to 4 args):
+
+```{r}
+x <- 1:4
+lapply(x, runif)
+```
+
+- Now with extra args:
+
+```{r}
+x <- 1:4
+lapply(x, runif, min = 0, max = 10)
+```
+
+- apply family makes have use of anonymous functions
+  - anon.func() are func()s that dont have a name
+  - can be generated on the fly
+  
+  
+```{r}
+x = list(
+  a = matrix(1:4, 2, 2),
+  b = matrix(1:6, 3, 2)
+)
+
+x
+```
+
+With a function that would extract first line of a matrix. The function doesnt exist outside the context of lapply!
+
+```{r}
+lapply(x, function(elt) elt[,1])
+```
+
+### sapply
+
+- It's the same of lapply, but tries to simplify the results
+- Coerces lists to vector, e.g.
+- If is a list of vectors of same length, returns a matrix
+- If its stupid, returns list
+
+```{r}
+x = list(
+  a = 1:4,
+  b = rnorm(10),
+  c = rnorm(20, 1),
+  d = rnorm(100, 5)
+)
+
+lapply(x, mean)
+```
+
+```{r}
+sapply(x, mean)
+```
+
+### apply
+
+- Used on arrays of any dimensions
+- Used on rows of DFs and matrices
+- Slower than a for loop?
+- Involves less typing // good programmers are "lazy"
+
+```{r}
+str(apply)
+```
+
+- X is an array
+- Margins to be retained
+- FUN a function
+- ... args
+
+
+```{r}
+x <- matrix(rnorm(200), 20, 10)
+apply(x, 2, mean)
+```
+
+In the previous example, the 2nd dimension (columns) was kept, so apply
+calculated the meah for each column (dimension 2), collapsing each row
+(dimension 1). The reverse can be done:
+
+```{r}
+x <- matrix(rnorm(200), 20, 10)
+apply(x, 1, mean)
+```
+
+For these particular functions, there are shortcuts:
+
+- `rowSums = apply(x, 1, sum)`
+- `colSums = apply(x, 2, sum)`
+- `rowMeans = apply(x, 1, mean)`
+- `colMeans = apply(x, 2, mean)`
+
+### Other ways to apply - quantiles
+
+- Calculate the quantiles of rows:
+
+```{r}
+x <- matrix(rnorm(200), 20, 10)
+as.data.frame(t(apply(x, 1, quantile, probs = c(0.25, 0.75))))
+```
+
+### Average matrix on array
+
+Collapse the 3rd dimension, keeping c(1, 2):
+
+```{r}
+a <- array(rnorm(2*2*10), c(2,2,10))
+apply(a, c(1, 2), mean)
+```
+
+Can be also done with rowMeans:
+
+```{r}
+rowMeans(a, dims = 2)
+```
+
+### mapply
+
+Multivariate apply in parallel
+
+```{r}
+str(mapply)
+```
+
+- FUN: the function
+- `...`: Series of objects
+- MoreArgs: Args to the function
+- Simplify: sapply behavior
+- Other apply functions iterated over a single object
+- Mapply iterates over two sets
+
+#### Two ways to making a list
+
+The tedious way:
+
+```{r}
+list(
+  rep(1, 4),
+  rep(2, 3),
+  rep(3, 2),
+  rep(4, 1)
+)
+```
+
+Instead:
+
+```{r}
+mapply(rep, 1:4, 4:1)
+```
+
+### Vec a f'n
+
+```{r}
+noise <- function(n, mean, sd) {
+  rnorm(n, mean, sd)
+}
+
+noise(5, 1, 2)
+```
+
+Works incorrectly with a range of values:
+
+```{r}
+noise(1:5, 1:5, 2)
+```
+
+With mapply (would be tedious otherwise):
+
+```{r}
+mapply(noise, 1:5, 1:5, 2)
+```
+
+Obs: three weeks in, we already optimizing stuff!
+
+### tapply
+
+- Apply a f'n over subsets of a vec
+
+```{r}
+str(tapply)
+```
+
+- X is a vector
+- INDEX is a factor or list of factors
+- FUN
+- ... args to FUN
+- simplify = sapply
+
+Gera valores e níveis:
+
+```{r}
+x <- c(rnorm(10), runif(10), rnorm(10, 1))
+f <- gl(3, 10)
+f
+```
+
+Aplica média sobre os níveis:
+
+```{r}
+tapply(x, f, mean)
+```
+
+Without simplifying, a list is returned:
+
+```{r}
+tapply(x, f, mean, simplify = F)
+```
+
+With range() f'n:
+
+```{r}
+tapply(x, f, range)
+```
+
+### split
+
+- Splits an object by factor or list of factors
+```{r}
+str(split)
+```
+
+- x: vector, list or DF
+- f: factor or l'factors
+- drop: shoud empty levels be dropped
+
+```{r}
+x <- c(rnorm(10), runif(10), rnorm(10, 1))
+split(x, f)
+```
+
+- Split always return a list back:
+
+```{r}
+f2 <- gl(3, 10)
+as.data.frame(split(x, f))
+```
+
+A common idiom is to use lapply(split ..):
+
+```{r}
+lapply(split(x, f), mean)
+```
+
+### Splitting a d.f.:
+
+```{r}
+library(datasets)
+head(airquality)
+```
+
+- Calculate mean within each month:
+
+```{r}
+s <- split(airquality, airquality$Month)
+lapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")]))
+```
+
+- sapply will simplify the out:
+
+```{r}
+sapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")]))
+```
+
+- removing NAs:
+
+```{r}
+lapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")], na.rm = T))
+```
+
+### Splitting interactions
+
+```{r}
+x <- rnorm(10)
+f1 <- gl(2, 5)
+f2 <- gl(5, 2)
+c(f1, f2)
+```
+
+- Can create interactions:
+
+```{r}
+interaction(f1, f2)
+```
+
+- Interactions can create empty levels:
+
+```{r}
+str(split(x, list(f1, f2)))
+```
+
+- Can be removed simply with drop:
+
+```{r}
+str(split(x, list(f1, f2), drop = 1))
+```
+
+# Debugging
+
+- Come with R
+- Solve problems
+- message: a notification
+- warnings
+- error (kill signal)
+- condition (unexpected stuff)
+
+## Warning
+
+```{r}
+log(-1)
+```
+
+```{r}
+printmessage <- function(x) {
+  if (is.na(x))
+    print("x is stupid")
+  else if (x > 0)
+    print("x > 0")
+  else
+    print("x <= 0 ")
+  invisible(x)
+}
+```
+
+Now, an error!
+
+```{r}
+printmessage(NA)
+```
+
+## Debugging tools in R
+
+- traceback: prints the call stack
+- debug: flags a function for debug mode (one step at a time)
+- browser: suspends a function, puts in debug mode
+- trace: insert debugging code into specific places
+- recover: modify the error behavior so the stack can be browsed, error handler function - rather than get the console back, freezes the call back on the wrong part
+- more blunt: inser printing into a function
+
+### Using the debugger
+
+- Traceback shows where the error is:
+
+```{r}
+rm(x)
+mean(x)
+traceback()
+```
+
+Now, for a big one:
+
+```{r}
+lm(y - x)
+traceback()
+# debug(lm)
+# lm(y-x)
+```
+
+Goes level for level, bottom-up, and find where the stupidity is.
+One can also debug a debug!
+
+### recover
+
+You can tackle some options on the called function:
+
+```{r}
+options(error=default)
+read.csv("no such file")
+```
+
+### Quiz
+
+1. There will be an object called 'iris' in your workspace. In this dataset, what is the mean of 'Sepal.Length' for the species virginica? Please round your answer to the nearest whole number.
+
+```{r}
+iris.virginica <- split(iris, iris$Species)
+round(mean(iris.virginica$virginica$Sepal.Length), digits = 0)
+```
+
+2. Continuing with the 'iris' dataset from the previous Question, what R code returns a vector of the means of the variables 'Sepal.Length', 'Sepal.Width', 'Petal.Length', and 'Petal.Width'?
+
+```{r}
+apply(iris[, 1:4], 2, mean)
+```
+
+3. Load the 'mtcars' dataset. How can one calculate the average miles per gallon (mpg) by number of cylinders in the car (cyl)? Select all that apply.
+
+```{r}
+# sapply(mtcars, cyl, mean)
+tapply(mtcars$cyl, mtcars$mpg, mean)
+tapply(mtcars$mpg, mtcars$cyl, mean)
+```
+
+```{r}
+with(mtcars, tapply(mpg, cyl, mean))
+```
+
+Negative below, only returns means per column (2)
+```{r}
+apply(mtcars, 2, mean)
+```
+
+```{r}
+lapply(mtcars, mean)
+```
+
+```{r}
+# mean(mtcars$mpg, mtcars$cyl)
+```
+
+```{r}
+sapply(split(mtcars$mpg, mtcars$cyl), mean)
+```
+
+```{r}
+split(mtcars, mtcars$cyl)
+```
+
+
+4.Continuing with the 'mtcars' dataset from the previous Question, what is the absolute difference between the average horsepower of 4-cylinder cars and the average horsepower of 8-cylinder cars?
+
+```{r}
+power <- with(mtcars, tapply(hp, cyl, mean))
+as.integer(power[3]) - as.integer(power[1])
+undebug(ls)
+```
+
+
+# Week 3 assignment
+
+
+
+
+
 
 
