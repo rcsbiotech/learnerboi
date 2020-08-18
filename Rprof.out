@@ -1,0 +1,5 @@
+sample.interval=20000
+"eval" "eval" "model.frame.default" "stats::model.frame" "eval" "eval" "lm" 
+"eval" "eval" "model.frame.default" "stats::model.frame" "eval" "eval" "lm" 
+"lapply" "FUN" "lapply" "findLocalsList1" "findLocalsList" "funEnv" "make.functionContext" "cmpfun" "doTryCatch" "tryCatchOne" "tryCatchList" "tryCatch" "compiler:::tryCmpfun" ".rs.recordTraceback" "<Anonymous>" "eval" "eval" "model.frame.default" "stats::model.frame" "eval" "eval" "lm" 
+"<Anonymous>" "eval" "eval" "model.frame.default" "stats::model.frame" "eval" "eval" "lm" 

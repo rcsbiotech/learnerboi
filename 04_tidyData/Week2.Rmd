@@ -1,0 +1,196 @@
+---
+title: "Week 2 - Getting and Cleaning Data"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::html_clean:
+    highlight: kate
+---
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+## Parsing SQL data
+
+- All the goodness of SQL
+- Strucutre: Databases, tables, fields
+- Rows as 'Records'
+
+### Getting a SQL genome from UCSC
+
+```{r}
+## Make the obj into a handle
+ucscDb <- dbConnect(MySQL(), 
+                    user="genome",
+                    host="genome-mysql.cse.ucsc.edu")
+
+## Query the database
+## "show databases" - mySQL command
+result <- dbGetQuery(ucscDb, "show databases;")
+dbDisconnect(ucscDb)
+```
+
+Show all databases from UCSC:
+
+```{r}
+result
+```
+
+### Connecting to hg19
+
+```{r}
+### Acessing the hg db
+hg19 <- dbConnect(MySQL(),
+                  user = "genome",
+                  db = "hg19",
+                  host = "genome-mysql.cse.ucsc.edu")
+
+allTables <- dbListTables(hg19)
+length(allTables)
+```
+```{r}
+## Components of human genome!
+allTables[1:5]
+```
+
+### Getting dimensions of a specific table
+
+```{r}
+dbListFields(hg19, "affyU133Plus2")
+```
+
+- Querying with SQL commands:
+
+```{r}
+## How many spots in the Affymetrix U133+2? (rows)
+dbGetQuery(hg19, "select count(*) from affyU133Plus2")
+```
+
+#### Getting an actual SQL table
+
+```{r}
+affyData <- dbReadTable(hg19, "affyU133Plus2")
+head(affyData)
+```
+
+- Getting a specific subset
+
+```{r}
+query <- dbSendQuery(hg19,
+                     "select * from affyU133Plus2
+                     where misMatches between 1 and 3")
+
+## Fetching the query
+affyMis <- fetch(query)
+quantile(affyMis$misMatches)
+```
+
+```{r}
+## Querying the first 10
+affyMisSmall <- fetch(query, n = 10)
+dbClearResult(query)
+```
+
+- A small table:
+
+```{r}
+dim(affyMisSmall)
+```
+
+- The entire table:
+
+```{r}
+dim(affyMis)
+```
+
+- Remember to close the connection:
+
+```{r}
+dbDisconnect(hg19)
+```
+
+# Reading from HDF5
+
+- Store large sets
+- Supports a range of types
+- Hierarchical
+- Groups: zero or more sets and metadata
+  - Group headers: name and list of attributes
+  - Group symbol table: list of objects in a group
+- Datasets: N dim array of elements with metadata
+  - Header with name, datatype, dataspace, storage layout
+  - Data array with data
+
+## Installing R-HDF5
+
+```{r}
+# If you dont already have:
+# install.packages("BiocManager")
+# BiocManager::install("rhdf5")
+library(rhdf5)
+```
+
+If it worked:
+
+```{r}
+created = h5createFile("example.h5")
+created
+```
+
+Creating groups:
+
+```{r}
+created <- h5createGroup("example.h5", "foo")
+created <- h5createGroup("example.h5", "baa")
+created <- h5createGroup("example.h5", "foo/foobaa")
+h5ls("example.h5")
+```
+
+Writing to groups:
+
+Obs - may fit matrices, multidim arrays, quite anything.
+
+```{r}
+A = matrix(1:10, nr=5, nc=2)
+h5write(A, "example.h5", "foo/A")
+
+B = array(
+  seq(0.1, 2.0, by=0.1),
+  dim=c(5,2,2)
+)
+h5write(B, "example.h5", "foo/foobaa/B")
+
+h5ls("example.h5")
+```
+
+Writing a dataset:
+
+```{r}
+df = data.frame(1L:5L,
+                seq(0, 1, length.out=5),
+                c("ab", "cde", "fghi", "a", "s"),
+                stringsAsFactors = F)
+
+
+```
+
+
+
+
+
+
+
+

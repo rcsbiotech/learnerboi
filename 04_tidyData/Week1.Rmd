@@ -1,0 +1,331 @@
+---
+title: "Week 1 - Getting and Cleaning Data"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::html_clean:
+    highlight: kate
+---
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+## Tidy Data: Week 1
+
+- Topic somewhat assumed and entirely skipped
+- Raw vs processed data
+- Acquire noise data (such as FASTQC, NLP)
+- Record all preprocess steps
+- Author example: Illumina pipeline
+
+## Observations
+
+- Many images were really small compared to title and references, many unreadable (such as XML file example, illumina pipeline, and many others)
+- Code to access XML didn't work, had to workaround on my own
+- Almost everytime a link is cited there's nowhere to grab, click or copy the link, so i had to type all of 'em on my own which was quite unnecessary work
+- read.xlsx does not work at all on the newest R 4.0.2. I had to do many workarounds past this to actually read some xlsx stuff.
+- biocLite() is an old version of Bioconductor (Week 2)
+
+### Components of tidy data
+
+1. Raw data
+2. Tidy data
+3. A code book describing variables and values in tidy data
+4. The exact recipe from 1 to 2,3
+
+### Raw data
+
+Should be:
+
+- No software run on the data;
+- No manipulation of numbers;
+- No removal of any points in data;
+- No summarization of data.
+
+### Tidy data
+
+- Each var = one column
+- Each observation in a diff row
+- One table for each "kind" of variable
+- Multiple tables? Primary key
+- Header (and readable!)
+
+### The code book
+
+- Info about variables in raw set
+- Summary on choices
+- Experimental design of the study
+- Text file
+- Section: Study design
+- Section: Code book (vars and units)
+
+### The instruction list
+
+- Script
+- Input: raw data
+- Output: tidy data
+
+### Downloading data
+
+- Relative and absolute path
+- `getwd()`, `setwd()`
+- `file.exists()` check file
+- `dir.create()` creates a directory
+
+## download.file() - getting data
+
+- downloads a file
+- parameters: url, destfile, method
+- .tsv, .csv, xlsx, etc...
+- Download method: curl is default on Win
+- Record when you download!
+
+## Reading different files
+
+- from PC
+- from excel, reasons, `xlsx` package
+- `XLConnect` package has more options
+
+### Reading XML
+
+- eXtensible Markup Language
+- structured data
+- widely used on web, web scraping
+- Markup: strucutre, and content
+
+### Tags, elements, attributes
+
+- General labels
+  - Start tags, `<section>`
+  - End tags
+  - Empty tags
+- Elements are specific examples of tags
+- Attributes are componentes of the labels
+
+```{r}
+library(XML)
+fileUrl <- "http://www-db.deis.unibo.it/courses/TW/DOCS/w3schools/xml/plant_catalog.xml"
+doc <- xmlTreeParse(fileUrl, useInternal=1)
+rootNode <- xmlRoot(doc)
+xmlName(rootNode)
+```
+- Extract parts of the file:
+
+```{r}
+head(xmlSApply(rootNode, xmlValue))
+```
+
+- XPath to better parse XML; sounds stupid if i can do it in pure R
+
+```{r}
+head(xpathSApply(rootNode, "//PLANT", xmlValue))
+```
+
+### Reading JSON
+
+- Javascript object notation
+- Lightweight, used on many APIs
+
+```{r}
+library(jsonlite)
+jsonData <- fromJSON("https://api.github.com/users/rcsbiotech/repos")
+head(names(jsonData), 10)
+```
+
+- Can convert data.frames to JSON:
+
+```{r}
+myjson <- toJSON(iris, pretty=T)
+cat(myjson)
+```
+
+- And back to DF:
+
+```{r}
+iris2 <- fromJSON(myjson)
+head(iris2)
+```
+
+### Package data.table
+
+- Work with same functions as data.frame
+- Written in C, so THE FAST
+
+```{r}
+library(data.table)
+DF = as.data.frame(iris)
+DT = data.table(iris)
+
+DF[1,1] == DT[1,1]
+```
+
+Get info on tables
+
+```{r}
+tables()
+```
+
+- Some additional stuff on subsetting
+- Column subsetting is different, call colnames without quotes
+- Copy with `copy()`
+- Operations with `tmp`, even complex:
+
+```{r}
+DT[, m:= {tmp <- (x+z); log2(tmp+5)}]
+```
+
+- plyr-like operations (logical a):
+
+```{r}
+DT[,a:x>0]
+DT[,b:= mean(x+w), by=a]
+```
+
+- special vars, like `.N`, which counts appearances:
+
+```{r}
+DT <- data.table(x = sample(letters[1:3], 1E5, TRUE))
+DT[, .N, by=x]
+```
+
+- data.tables also have keys:
+
+```{r}
+DT <- data.table(x=rep(c("a", "b", "c"), each = 100), y=rnorm(300))
+setkey(DT, x)
+DT['a']
+```
+
+- joins can be also done with keys:
+
+```{r}
+DT1 <- data.table(x=c('a', 'a', 'b', 'dt1'), y=1:4)
+DT2 <- data.table(x=c('a', 'b', 'dt2'), z=5:7)
+
+setkey(DT1, x)
+setkey(DT2, x)
+merge(DT1, DT2)
+```
+
+- reading with `fread()` is also stupidly fast.
+
+
+## W1 Quiz
+
+The American Community Survey distributes downloadable data about United States communities. Download the 2006 microdata survey about housing for the state of Idaho using download.file() from here:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv
+
+and load the data into R. The code book, describing the variable names is here:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FPUMSDataDict06.pdf
+
+How many properties are worth $1,000,000 or more?
+
+```{r}
+## Get the file
+download.file(
+  url = "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv",
+  destfile = "./housing.csv")
+
+housing <- read.csv("housing.csv")
+
+sum(housing$VAL >= 24, na.rm = T)
+```
+
+2. Use the data you loaded from Question 1. Consider the variable FES in the code book. Which of the "tidy data" principles does this variable violate? 
+
+```{r}
+housing$FES
+```
+
+```{r}
+## Get the file
+download.file(
+  url = "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FDATA.gov_NGAP.xlsx",
+  destfile = "./NGAP.xlsx")
+
+dat <- read_excel("./ngap2.xlsx", range = "sample!G18:P23")
+sum(dat$Zip*dat$Ext,na.rm=T)
+```
+
+
+4. Read the XML data on Baltimore restaurants from here:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Frestaurants.xml
+
+How many restaurants have zipcode 21231? 
+
+
+```{r}
+library(XML)
+fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Frestaurants.xml"
+doc <- xmlTreeParse(fileUrl, useInternal=1)
+rootNode <- xmlRoot(doc)
+xmlName(rootNode)
+
+download.file(
+  url = "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FDATA.gov_NGAP.xlsx",
+  destfile = "./NGAP.xlsx")
+
+## My method
+download.file(
+  url = "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Frestaurants.xml",
+  destfile = "./restaurants.xml")
+
+doc2 <- xmlParse(file = "restaurants.xml")
+doc <- xmlTreeParse("./restaurants.xml", useInternal=1)
+rootNode <- xmlRoot(doc)
+xmlName(rootNode)
+
+# Parse ZIP codes
+sum(xpathSApply(rootNode, "//zipcode", xmlValue) == "21231")
+
+```
+
+5. The American Community Survey distributes downloadable data about United States communities. Download the 2006 microdata survey about housing for the state of Idaho using download.file() from here:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06pid.csv
+
+using the fread() command load the data into an R object
+
+```{r}
+download.file(
+  url = "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06pid.csv",
+  destfile = "./getdata.csv")
+
+DT <- fread(file = "getdata.csv")
+
+## Methods
+system.time(mean(DT$pwgtp15, by=DT$SEX))
+```
+```{r}
+system.time(mean(DT[DT$SEX==1,]$pwgtp15))
+system.time(mean(DT[DT$SEX==2,]$pwgtp15))
+```
+```{r}
+system.time(rowMeans(DT)[DT$SEX==1]);
+```
+
+
+
+
+
+
+
+
+
+
